@@ -91,10 +91,10 @@ class ProductController {
     }
   }
 
-  //[path: /product/:productId]
+  //[path: /product/traits/:productId]
   async getFilterProducts(req, res, next) {
     const { tag, color, size } = req.query;
-
+    console.log(req.query);
     if (!tag && !color && !size) {
       let products = await Products.find();
       if (products) {

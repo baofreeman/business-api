@@ -49,7 +49,6 @@ class OrderController {
       totalQuantity,
     });
     const saveOrder = await Order.create(newOrder);
-    console.log(saveOrder);
     if (saveOrder) {
       return res.send({ url: `/checkout/success` });
     } else {

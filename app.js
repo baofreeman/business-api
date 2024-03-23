@@ -12,8 +12,8 @@ const cookieParser = require("cookie-parser");
 
 dbConnect();
 const corsOptions = {
-  // origin: ["https://business-web.onrender.com"],
-  origin: ["http://localhost:3000"],
+  origin: ["https://business-web.onrender.com"],
+  // origin: ["http://localhost:3000"],
   credentials: true,
 };
 app.use(

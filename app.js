@@ -12,7 +12,7 @@ const cookieParser = require("cookie-parser");
 
 dbConnect();
 const corsOptions = {
-  origin: process.env.CLIENT_URL,
+  origin: [`${process.env.CLIENT_URL}`],
   credentials: true,
 };
 app.use(

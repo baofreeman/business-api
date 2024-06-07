@@ -33,6 +33,24 @@ class UserController {
       return res.status(400).json({ message: "invalid" });
     }
   }
+
+  async deleteUser(req, res, next) {
+    const { userId } = req.body;
+    console.log(req.body);
+    if (!userId) {
+      return res.status(400).json({ message: "User ID required" });
+    }
+    const user = await Users.findById({ _id: userId }).exec();
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // Delete User
+    await user.deleteOne();
+    res.json({
+      message: `Username ${user.username} with Id ${user._id} deleted`,
+    });
+  }
 }
 
 module.exports = new UserController();

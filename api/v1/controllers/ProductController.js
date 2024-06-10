@@ -1,6 +1,23 @@
 const { default: mongoose } = require("mongoose");
 const Products = require("../models/product");
 const { query } = require("express");
+const cloudinary = require("../config/cloudinary");
+
+const cloudinaryImageUploadMethod = async (file) => {
+  return new Promise((resolve) => {
+    cloudinary.uploader.upload(file, (error, result) => {
+      if (error) {
+        return res
+          .status(401)
+          .json({ success: false, message: "invalid image" });
+      }
+      resolve({
+        url: result.url,
+        id: result.public_id,
+      });
+    });
+  });
+};
 
 class ProductController {
   //[path: /product]
@@ -14,6 +31,7 @@ class ProductController {
 
   async createProduct(req, res, next) {
     const { name, description, category, subCategory, tag } = req.body;
+
     if (!name || !description || !category) {
       return res.status(401).json({ message: "No data" });
     }
@@ -21,18 +39,29 @@ class ProductController {
       ...req.body,
       subCategory: JSON.parse(subCategory),
     });
-    if (!req.files) {
-      return res.status(401).json({ message: "Image is require" });
-    } else {
-      let path = "";
-      req.files.forEach((file, index, arr) => {
-        path = path + file.filename + ",";
-      });
-      path = path.substring(0, path.lastIndexOf(","));
-      path = path.split(",");
-      newProduct.productImg = path;
+    // if (!req.files) {
+    //   return res.status(401).json({ message: "Image is require" });
+    // } else {
+    //   let path = "";
+    //   req.files.forEach(async (file, index, arr) => {
+    //     path = path + file.filename + ",";
+    //   });
+    //   path = path.substring(0, path.lastIndexOf(","));
+    //   path = path.split(",");
+    //   newProduct.productImg = path;
+    // }
+
+    const urls = [];
+    const files = req.files;
+    for (const file of files) {
+      const { path } = file;
+      const newPath = await cloudinaryImageUploadMethod(path);
+      urls.push(newPath);
     }
+    newProduct.productImg = urls;
+
     const saveProduct = await Products.create(newProduct);
+    console.log(saveProduct);
     if (saveProduct) {
       return res.status(200).json({ message: `${name} is created` });
     } else {

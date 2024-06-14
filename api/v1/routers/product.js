@@ -15,7 +15,10 @@ router
   .route("/")
   .get(ProductController.getProducts)
   .post(upload.array("productImg"), ProductController.createProduct)
-  .patch(ProductController.updateProduct);
+  .patch(ProductController.updateProduct)
+  .delete(ProductController.deleteProduct);
+
+// router.route("/:productId").delete(ProductController.deleteProduct);
 
 router.route("/trait").get(ProductController.getFilterProducts);
 router.route("/search/:key").get(ProductController.searchProduct);

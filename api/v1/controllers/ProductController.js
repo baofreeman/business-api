@@ -1,19 +1,20 @@
-const { default: mongoose } = require("mongoose");
+const { default: mongoose, model } = require("mongoose");
 const Products = require("../models/product");
 const { query } = require("express");
 const cloudinary = require("../config/cloudinary");
 
-const cloudinaryImageUploadMethod = async (file) => {
+const cloudinaryImageUploadMethod = async (file, folder) => {
   return new Promise((resolve) => {
-    cloudinary.uploader.upload(file, (error, result) => {
+    cloudinary.uploader.upload(file, { folder }, (error, result) => {
       if (error) {
         return res
           .status(401)
-          .json({ success: false, message: "invalid image" });
+          .json({ success: false, message: "Hình ảnh bị lỗi" });
       }
       resolve({
         url: result.url,
         id: result.public_id,
+        folder: result.folder,
       });
     });
   });
@@ -24,72 +25,88 @@ class ProductController {
   async getProducts(req, res, next) {
     const products = await Products.find().exec();
     if (!products) {
-      return res.status(400).json({ message: "No product" });
+      return res.status(400).json({ message: "Không có dữ liệu" });
     }
     return res.status(200).json(products);
   }
 
   async createProduct(req, res, next) {
-    const { name, description, category, subCategory, tag } = req.body;
+    const { name, description, category, subCategory } = req.body;
 
-    if (!name || !description || !category) {
-      return res.status(401).json({ message: "No data" });
+    if (!name || !description || !category || !subCategory) {
+      return res.status(401).json({ message: "Không có dữ liệu" });
     }
     const newProduct = new Products({
       ...req.body,
       subCategory: JSON.parse(subCategory),
     });
-    // if (!req.files) {
-    //   return res.status(401).json({ message: "Image is require" });
-    // } else {
-    //   let path = "";
-    //   req.files.forEach(async (file, index, arr) => {
-    //     path = path + file.filename + ",";
-    //   });
-    //   path = path.substring(0, path.lastIndexOf(","));
-    //   path = path.split(",");
-    //   newProduct.productImg = path;
-    // }
 
     const urls = [];
     const files = req.files;
     for (const file of files) {
       const { path } = file;
-      const newPath = await cloudinaryImageUploadMethod(path);
+      const newPath = await cloudinaryImageUploadMethod(
+        path,
+        `products/${req.body.name}`
+      );
       urls.push(newPath);
     }
     newProduct.productImg = urls;
 
     const saveProduct = await Products.create(newProduct);
-    console.log(saveProduct);
     if (saveProduct) {
       return res.status(200).json({ message: `${name} is created` });
     } else {
       return res.status(401).json({ message: "Invalid Data" });
     }
   }
+
   async updateProduct(req, res, next) {
-    const { id, name, description, image, category, subCategory } = req.body;
-    if (!id || !name || !description || !image || !category || !subCategory) {
-      return res.status(401).json({ message: "No data" });
+    const { id, name, description, category } = req.body;
+    if (!id || !name || !description || !category) {
+      return res.status(401).json({ message: "Không có dữ liệu" });
     }
     const product = await Products.findOneAndUpdate({ _id: id }, req.body);
     if (product) {
-      return res.status(200).json({ message: `${name} is update` });
+      return res
+        .status(200)
+        .json({ message: `${name} đã cập nhật thành công` });
     } else {
-      return res.status(401).json({ message: "Invalid Data" });
+      return res.status(401).json({ message: "Không thể cập nhật" });
     }
   }
+
   async deleteProduct(req, res, next) {
-    const { productId } = req.params;
+    const { productId } = req.body;
+    console.log(req.body);
     if (!productId) {
-      return res.status(401).json({ message: "No data" });
+      return res.status(401).json({ message: "Không có dữ liệu" });
     }
-    const product = await Products.findOneAndDelete({ _id: productId });
-    if (product) {
-      return res.status(200).json({ message: `${product.name} is delete` });
+
+    const product = await Products.findOne({ _id: productId });
+    const pathImgId = product.productImg.flatMap(({ id }) => id);
+
+    // Delete image cloundinary
+    const deleteImg = await Promise.all([
+      await cloudinary.api.delete_resources(pathImgId, (err) => {
+        if (err)
+          return res.status(401).json({ message: "Hình ảnh không thể xóa" });
+      }),
+      await cloudinary.api.delete_folder(`products/${product.name}`, (err) => {
+        if (err)
+          return res.status(401).json({ message: "Thư mục không thể xóa" });
+      }),
+    ]);
+
+    // Delete item mongodb
+    const deleteProduct = await Products.deleteOne({ _id: productId });
+
+    if (deleteImg && deleteProduct) {
+      return res
+        .status(200)
+        .json({ message: `${product.name} đã xóa thành công` });
     } else {
-      return res.status(401).json({ message: "Invalid Data" });
+      return res.status(401).json({ message: "Dữ liệu không thể xóa" });
     }
   }
 
@@ -122,8 +139,9 @@ class ProductController {
 
   //[path: /product/traits/:productId]
   async getFilterProducts(req, res, next) {
-    const { tag, color, size } = req.query;
-    if (!tag && !color && !size) {
+    const { category, tag, color, size } = req.query;
+
+    if (!category && !tag && !color && !size) {
       let products = await Products.find();
       if (products) {
         return res.status(200).json(products);
@@ -131,7 +149,30 @@ class ProductController {
         return res.status(400).json({ message: "no product" });
       }
     }
-    if (tag && !color && !size) {
+    /////////////////////////////////// category
+    if (category && !tag && !color && !size) {
+      const products = await Products.find({ category: category });
+      if (!products) {
+        return res.status(400).json({ message: "No Category" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+
+    if (category && tag && !color && !size) {
+      const products = await Products.find({
+        category: category,
+        "subCategory.tag": tag,
+      });
+      if (!products) {
+        return res.status(400).json({ message: "No category and tag" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+
+    /////////////////////////////////// tag
+    if (!category && tag && !color && !size) {
       const products = await Products.find({ "subCategory.tag": tag });
       if (!products) {
         return res.status(400).json({ message: "No Tag" });
@@ -139,9 +180,11 @@ class ProductController {
         return res.status(200).json(products);
       }
     }
-    if (!tag && color && !size) {
+
+    if (category && tag && !color && !size) {
       const products = await Products.find({
-        "subCategory.model.color": color,
+        category: category,
+        "subCategory.tag": tag,
       });
       if (!products) {
         return res.status(400).json({ message: "No Color" });
@@ -150,10 +193,11 @@ class ProductController {
       }
     }
 
-    if (tag && color && !size) {
+    if (category && !tag && color && size) {
       const products = await Products.find({
-        "subCategory.tag": tag,
+        category: category,
         "subCategory.model.color": color,
+        "subCategory.model.skus.size": size,
       });
       if (!products) {
         return res.status(400).json({ message: "No tag and Color" });
@@ -162,22 +206,22 @@ class ProductController {
       }
     }
 
-    if (!tag && color && size) {
+    /////////////////////////////////// color
+    if (!category && !tag && color && !size) {
       const products = await Products.find({
         "subCategory.model.color": color,
-        "subCategory.model.skus.size": size,
       });
       if (!products) {
-        return res.status(400).json({ message: "No color and size" });
+        return res.status(400).json({ message: "No color" });
       } else {
         return res.status(200).json(products);
       }
     }
 
-    if (tag && !color && size) {
+    if (!category && tag && color && !size) {
       const products = await Products.find({
         "subCategory.tag": tag,
-        "subCategory.model.skus.size": size,
+        "subCategory.model.color": color,
       });
       if (!products) {
         return res.status(400).json({ message: "No tag and size" });
@@ -186,7 +230,34 @@ class ProductController {
       }
     }
 
-    if (!tag && !color && size) {
+    if (category && !tag && color && !size) {
+      const products = await Products.find({
+        category: category,
+        "subCategory.model.color": color,
+      });
+      if (!products) {
+        return res.status(400).json({ message: "No tag and size" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+
+    if (category && tag && color && !size) {
+      const products = await Products.find({
+        category: category,
+        "subCategory.tag": tag,
+        "subCategory.model.color": color,
+      });
+      if (!products) {
+        return res.status(400).json({ message: "No color" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+
+    /////////////////////////////////// size
+
+    if (!category && !tag && !color && size) {
       const products = await Products.find({
         "subCategory.model.skus.size": size,
       });
@@ -196,9 +267,33 @@ class ProductController {
         return res.status(200).json(products);
       }
     }
-
-    if (color && tag && size) {
+    if (!category && !tag && color && size) {
       const products = await Products.find({
+        "subCategory.model.color": color,
+        "subCategory.model.skus.size": size,
+      });
+      if (!products) {
+        return res.status(400).json({ message: "No size" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+    if (!category && tag && color && size) {
+      const products = await Products.find({
+        "subCategory.tag": tag,
+        "subCategory.model.color": color,
+        "subCategory.model.skus.size": size,
+      });
+      if (!products) {
+        return res.status(400).json({ message: "No size" });
+      } else {
+        return res.status(200).json(products);
+      }
+    }
+
+    if (category && tag && color && size) {
+      const products = await Products.find({
+        category: category,
         "subCategory.tag": tag,
         "subCategory.model.color": color,
         "subCategory.model.skus.size": size,

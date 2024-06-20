@@ -14,14 +14,13 @@ const upload = multer({ storage: storage });
 router
   .route("/")
   .get(ProductController.getProducts)
-  .post(upload.array("productImg"), ProductController.createProduct)
+  .post(upload.array("productImg"), verifyJWT, ProductController.createProduct)
   .patch(ProductController.updateProduct)
   .delete(ProductController.deleteProduct);
 
-// router.route("/:productId").delete(ProductController.deleteProduct);
-
 router.route("/trait").get(ProductController.getFilterProducts);
 router.route("/search/:key").get(ProductController.searchProduct);
+
 router
   .route("/:itemId")
   .get(ProductController.getProduct)

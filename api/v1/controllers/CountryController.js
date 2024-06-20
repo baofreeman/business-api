@@ -1,5 +1,6 @@
 const axios = require("axios");
 class CountryController {
+  // GET pronvinces.
   async provinces(req, res, next) {
     try {
       const result = await axios.get("https://vapi.vnappmob.com/api/province");
@@ -8,7 +9,7 @@ class CountryController {
       console.log(error);
     }
   }
-
+  // GET districts.
   async districts(req, res, next) {
     const { provinceId } = req.params;
     try {

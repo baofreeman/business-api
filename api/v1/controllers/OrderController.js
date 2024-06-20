@@ -4,21 +4,16 @@ const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_KEY);
 
 class OrderController {
+  // GET path: /v1/order
   async getOrder(req, res) {
     const orders = await Order.find().exec();
     if (!orders) {
-      return res.status(401).json({ message: "No data" });
+      return res.status(401).json({ message: "Không có dữ liệu" });
     }
     return res.status(200).json(orders);
   }
-  async getOrderDetail(req, res) {
-    const { orderId } = req.body;
-    const order = await Order.findOne({ _id: orderId }).exec();
-    if (!order) {
-      return res.status(401).json({ message: "No data" });
-    }
-    return res.status(200).json(order);
-  }
+
+  // POST path: /v1/order
   async createOrder(req, res) {
     const {
       name,
@@ -54,8 +49,18 @@ class OrderController {
     if (saveOrder) {
       return res.send({ url: `/checkout/success` });
     } else {
-      return res.status(401).json({ message: "Invalid Data" });
+      return res.status(401).json({ message: "Không có dữ liệu" });
     }
+  }
+
+  // GET path: /v1/order-detail
+  async getOrderDetail(req, res) {
+    const { orderId } = req.body;
+    const order = await Order.findOne({ _id: orderId }).exec();
+    if (!order) {
+      return res.status(401).json({ message: "Không có dữ liệu" });
+    }
+    return res.status(200).json(order);
   }
 }
 

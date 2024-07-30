@@ -1,3 +1,5 @@
+const cloudinary = require("cloudinary").v2;
+
 const cloudinaryImageUploadMethod = async (file, folder) => {
   return new Promise((resolve) => {
     cloudinary.uploader.upload(file, { folder }, (error, result) => {

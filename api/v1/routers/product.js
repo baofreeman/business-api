@@ -2,7 +2,10 @@ const express = require("express");
 const ProductController = require("../controllers/ProductController");
 const router = express.Router();
 const multer = require("multer");
-const verifyJWT = require("../middleware/verifyJWT");
+const passport = require("passport");
+const {
+  accessTokenAutoRefresh,
+} = require("../middleware/accessTokenAutoRefresh");
 
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
@@ -11,19 +14,40 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router
-  .route("/")
-  .get(ProductController.getProducts)
-  .post(upload.array("productImg"), verifyJWT, ProductController.createProduct)
-  .patch(ProductController.updateProduct)
-  .delete(ProductController.deleteProduct);
-
-router.route("/trait").get(ProductController.getFilterProducts);
+// Public router Products
+router.route("/").get(ProductController.getProducts);
+router.route("/filter").get(ProductController.getFilterProducts);
 router.route("/search/:key").get(ProductController.searchProduct);
-
+router.route("/:category").get(ProductController.getProductsCategory);
 router
-  .route("/:itemId")
+  .route("/variants/:itemId")
   .get(ProductController.getProduct)
   .delete(ProductController.deleteProduct);
+
+// Protected router Product. Is Admin
+router
+  .route("/create-product")
+  .post(
+    accessTokenAutoRefresh,
+    passport.authenticate("jwt", { session: false }),
+    upload.array("productImg"),
+    ProductController.createProduct
+  );
+
+router
+  .route("/update-product")
+  .patch(
+    accessTokenAutoRefresh,
+    passport.authenticate("jwt", { session: false }),
+    ProductController.updateProduct
+  );
+
+router
+  .route("/delete-product")
+  .delete(
+    accessTokenAutoRefresh,
+    passport.authenticate("jwt", { session: false }),
+    ProductController.deleteProduct
+  );
 
 module.exports = router;

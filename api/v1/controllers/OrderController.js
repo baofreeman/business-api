@@ -1,19 +1,18 @@
-const Order = require("../models/order");
-const express = require("express");
+const OrderModal = require("../models/Order");
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_KEY);
 
 class OrderController {
-  // GET path: /v1/order
+  // GET /v1/order/all-order
   async getOrder(req, res) {
-    const orders = await Order.find().exec();
+    const orders = await OrderModal.find().exec();
     if (!orders) {
       return res.status(401).json({ message: "Không có dữ liệu" });
     }
-    return res.status(200).json(orders);
+    res.status(200).json(orders);
   }
 
-  // POST path: /v1/order
+  // POST /v1/order/create-order
   async createOrder(req, res) {
     const {
       name,
@@ -28,6 +27,7 @@ class OrderController {
       shippingPrice,
       totalQuantity,
       paymentMethod,
+      userId,
     } = req.body;
     const newOrder = new Order({
       billingAddress: {
@@ -37,6 +37,7 @@ class OrderController {
         province: province,
         address: address,
       },
+      userId: userId,
       items: cart,
       paymentMethod,
       shippingPrice,
@@ -45,22 +46,21 @@ class OrderController {
       totalPrice,
       totalQuantity,
     });
-    const saveOrder = await Order.create(newOrder);
-    if (saveOrder) {
-      return res.send({ url: `/checkout/success` });
-    } else {
+    const saveOrder = await OrderModal.create(newOrder);
+    if (!saveOrder) {
       return res.status(401).json({ message: "Không có dữ liệu" });
     }
+    res.send({ url: `/checkout/success` });
   }
 
-  // GET path: /v1/order-detail
+  // GET /v1/order/order-detail
   async getOrderDetail(req, res) {
     const { orderId } = req.body;
-    const order = await Order.findOne({ _id: orderId }).exec();
+    const order = await OrderModal.findOne({ _id: orderId }).exec();
     if (!order) {
       return res.status(401).json({ message: "Không có dữ liệu" });
     }
-    return res.status(200).json(order);
+    res.status(200).json(order);
   }
 }
 

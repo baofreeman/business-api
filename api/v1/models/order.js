@@ -9,6 +9,7 @@ const OrderItem = mongoose.Schema(
       address: { type: String, required: true },
       phone: { type: String, required: true },
     },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: "" },
     deliveryStatus: {
       type: String,
       default: "pending",

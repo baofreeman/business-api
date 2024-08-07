@@ -1,17 +1,19 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
+
 const product = require("./api/v1/routers/product");
 const order = require("./api/v1/routers/order");
 const auth = require("./api/v1/routers/auth");
 const country = require("./api/v1/routers/country");
 const user = require("./api/v1/routers/user");
-const dbConnect = require("./api/v1/config/dbConnect");
-const cookieParser = require("cookie-parser");
+
 const passport = require("passport");
 require("./api/v1/config/passport-jwt-strategy.js");
 
+const dbConnect = require("./api/v1/config/dbConnect");
 // Connect Database
 dbConnect();
 

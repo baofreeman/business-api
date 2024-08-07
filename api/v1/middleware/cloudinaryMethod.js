@@ -4,9 +4,9 @@ const cloudinaryImageUploadMethod = async (file, folder) => {
   return new Promise((resolve) => {
     cloudinary.uploader.upload(file, { folder }, (error, result) => {
       if (error) {
-        return res
+        return result
           .status(401)
-          .json({ success: false, message: "Hình ảnh bị lỗi" });
+          .json({ success: false, message: error.message });
       }
       resolve({
         url: result.url,

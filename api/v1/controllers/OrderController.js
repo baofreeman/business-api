@@ -1,6 +1,4 @@
 const OrderModal = require("../models/Order");
-const Stripe = require("stripe");
-const stripe = Stripe(process.env.STRIPE_KEY);
 
 class OrderController {
   // GET /v1/order/all-order
@@ -29,7 +27,7 @@ class OrderController {
       paymentMethod,
       userId,
     } = req.body;
-    const newOrder = new Order({
+    const newOrder = new OrderModal({
       billingAddress: {
         name: name,
         phone: phone,

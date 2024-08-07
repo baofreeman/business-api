@@ -16,9 +16,9 @@ const upload = multer({ storage: storage });
 
 // Public router Products
 router.route("/").get(ProductController.getProducts);
-router.route("/filter").get(ProductController.getFilterProducts);
+router.route("/:category").get(ProductController.getFilterProducts);
 router.route("/search/:key").get(ProductController.searchProduct);
-router.route("/:category").get(ProductController.getProductsCategory);
+// router.route("/:category").get(ProductController.getProductsCategory);
 router
   .route("/variants/:itemId")
   .get(ProductController.getProduct)

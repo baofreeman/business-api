@@ -1,4 +1,3 @@
-const { default: mongoose, model } = require("mongoose");
 const ProductModal = require("../models/Product");
 const cloudinary = require("../config/cloudinary");
 const cloudinaryImageUploadMethod = require("../middleware/cloudinaryMethod");

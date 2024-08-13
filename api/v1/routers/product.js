@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Public router Products
-router.route("/").get(ProductController.getProducts);
+router.route("/").get(accessTokenAutoRefresh, ProductController.getProducts);
 router.route("/:category").get(ProductController.getFilterProducts);
 router.route("/search/:key").get(ProductController.searchProduct);
 // router.route("/:category").get(ProductController.getProductsCategory);

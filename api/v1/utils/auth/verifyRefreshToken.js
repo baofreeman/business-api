@@ -12,7 +12,7 @@ const verifyRefreshToken = async (refreshToken) => {
 
     // If refresh token not found, reject with an error
     if (!userRefreshToken) {
-      throw { error: true, message: "Invalid refresh token" };
+      return { error: "failed", message: "Invalid refresh token" };
     }
 
     // Verify the refresh token

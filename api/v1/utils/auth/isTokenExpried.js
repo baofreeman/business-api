@@ -4,7 +4,6 @@ const isTokenExpire = (token) => {
     return true;
   }
   const decodedToken = jwt.decode(token);
-  console.log("decode", decodedToken);
   const currentTime = Date.now() / 1000;
   return decodedToken.exp < currentTime;
 };

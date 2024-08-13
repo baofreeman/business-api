@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const ProductModal = require("../models/Product");
 
 const cloudinary = require("../config/cloudinary");
@@ -9,7 +10,6 @@ class ProductController {
     let { page } = req.query;
     let limit = 8;
     let skip = (page - 1) * limit;
-
     if (page === undefined) {
       const products = await ProductModal.find();
       if (!products) {

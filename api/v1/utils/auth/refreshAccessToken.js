@@ -6,12 +6,13 @@ const { verifyRefreshToken } = require("./verifyRefreshToken");
 const refreshAccessToken = async (req, res) => {
   try {
     const oldRefreshToken = req.cookies.refreshToken;
+    console.log(oldRefreshToken);
     // Verify Refresh Token is valid or not
     const { tokenDetails, error } = await verifyRefreshToken(oldRefreshToken);
     if (error) {
       return res
         .status(401)
-        .send({ status: "failed", message: "Invalid refresh token" });
+        .json({ status: "failed", message: "Invalid refresh token" });
     }
     // Find User based on Refresh Token detail id
     const user = await UserModal.findById(tokenDetails._id);
@@ -19,20 +20,20 @@ const refreshAccessToken = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .send({ status: "failed", message: "User not found" });
+        .json({ status: "failed", message: "User not found" });
     }
 
     const userRefreshToken = await UserRefreshTokenModal.findOne({
       userId: tokenDetails._id,
     });
-
+    console.log(userRefreshToken.token);
     if (
       oldRefreshToken !== userRefreshToken.token ||
       userRefreshToken.blacklisted
     ) {
       return res
         .status(401)
-        .send({ status: "failed", message: "Unauthorized access" });
+        .json({ status: "failed", message: "Unauthorized access" });
     }
 
     // Generate new access and refresh tokens

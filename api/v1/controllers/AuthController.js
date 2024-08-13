@@ -225,7 +225,8 @@ class AuthController {
 
   // GET /v1/auth/me
   async userProfile(req, res) {
-    res.send({ user: req.user });
+    const user = req.user;
+    return res.status(200).json(user);
   }
 
   // POST /v1/auth/change-password
